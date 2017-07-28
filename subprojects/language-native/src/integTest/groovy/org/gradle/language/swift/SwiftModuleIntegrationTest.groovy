@@ -105,7 +105,7 @@ class SwiftModuleIntegrationTest extends AbstractInstalledToolChainIntegrationSp
         sharedLibrary("Greeting/build/lib/Greeting").assertExists()
     }
 
-    def "can change default module name and successfully link against library library"() {
+    def "can change default module name and successfully link against library"() {
         settingsFile << "include 'lib1', 'lib2'"
         def app = new ExeWithLibraryUsingSwiftLibraryHelloWorldApp()
 
