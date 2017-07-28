@@ -16,8 +16,6 @@
 
 package org.gradle.nativeplatform.toolchain.internal.swift;
 
-import org.gradle.api.Action;
-import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.internal.operations.BuildOperationQueue;
 import org.gradle.nativeplatform.internal.LinkerSpec;
 import org.gradle.nativeplatform.internal.SharedLibraryLinkerSpec;
@@ -25,16 +23,14 @@ import org.gradle.nativeplatform.toolchain.internal.AbstractCompiler;
 import org.gradle.nativeplatform.toolchain.internal.ArgsTransformer;
 import org.gradle.nativeplatform.toolchain.internal.CommandLineToolContext;
 import org.gradle.nativeplatform.toolchain.internal.CommandLineToolInvocation;
-import org.gradle.nativeplatform.toolchain.internal.CommandLineToolInvocationWorker;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-// TODO(daniel): Swift compiler should extends from an abstraction of NativeCompiler (most of is applies to SwiftCompiler)
 class SwiftLinker extends AbstractCompiler<LinkerSpec> {
-    SwiftLinker(BuildOperationExecutor buildOperationExecutor, CommandLineToolInvocationWorker commandLineToolInvocationWorker, CommandLineToolContext invocationContext) {
-        super(buildOperationExecutor, commandLineToolInvocationWorker, invocationContext, new SwiftCompileArgsTransformer(), false);
+    SwiftLinker(CommandLineToolContext invocationContext) {
+        super(invocationContext, new SwiftCompileArgsTransformer(), false);
     }
 
     @Override
@@ -42,19 +38,12 @@ class SwiftLinker extends AbstractCompiler<LinkerSpec> {
     }
 
     @Override
-    protected Action<BuildOperationQueue<CommandLineToolInvocation>> newInvocationAction(final LinkerSpec spec) {
+    public void start(LinkerSpec spec, BuildOperationQueue<CommandLineToolInvocation> queue) {
         List<String> args = getArguments(spec);
 
-        final CommandLineToolInvocation invocation = newInvocation(
+        CommandLineToolInvocation invocation = newInvocation(
             "linking " + spec.getOutputFile().getName(), spec.getOutputFile().getParentFile(), args, spec.getOperationLogger());
-
-        return new Action<BuildOperationQueue<CommandLineToolInvocation>>() {
-            @Override
-            public void execute(BuildOperationQueue<CommandLineToolInvocation> buildQueue) {
-                buildQueue.setLogLocation(spec.getOperationLogger().getLogLocation());
-                buildQueue.add(invocation);
-            }
-        };
+        queue.add(invocation);
     }
 
     private static class SwiftCompileArgsTransformer implements ArgsTransformer<LinkerSpec> {

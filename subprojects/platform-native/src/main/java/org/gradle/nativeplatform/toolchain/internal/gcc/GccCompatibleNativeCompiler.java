@@ -17,11 +17,9 @@
 package org.gradle.nativeplatform.toolchain.internal.gcc;
 
 import org.gradle.api.Transformer;
-import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.nativeplatform.internal.CompilerOutputFileNamingSchemeFactory;
 import org.gradle.nativeplatform.toolchain.internal.ArgsTransformer;
 import org.gradle.nativeplatform.toolchain.internal.CommandLineToolContext;
-import org.gradle.nativeplatform.toolchain.internal.CommandLineToolInvocationWorker;
 import org.gradle.nativeplatform.toolchain.internal.NativeCompileSpec;
 import org.gradle.nativeplatform.toolchain.internal.NativeCompiler;
 import org.gradle.nativeplatform.toolchain.internal.OptionsFileArgsWriter;
@@ -33,8 +31,8 @@ import java.util.List;
 
 class GccCompatibleNativeCompiler<T extends NativeCompileSpec> extends NativeCompiler<T> {
 
-    GccCompatibleNativeCompiler(BuildOperationExecutor buildOperationExecutor, CompilerOutputFileNamingSchemeFactory compilerOutputFileNamingSchemeFactory, CommandLineToolInvocationWorker commandLineTool, CommandLineToolContext invocationContext, final ArgsTransformer<T> argsTransformer, Transformer<T, T> specTransformer, String objectFileExtension, boolean useCommandFile) {
-        super(buildOperationExecutor, compilerOutputFileNamingSchemeFactory, commandLineTool, invocationContext, argsTransformer, specTransformer, objectFileExtension, useCommandFile);
+    GccCompatibleNativeCompiler(CompilerOutputFileNamingSchemeFactory compilerOutputFileNamingSchemeFactory, CommandLineToolContext invocationContext, final ArgsTransformer<T> argsTransformer, Transformer<T, T> specTransformer, String objectFileExtension, boolean useCommandFile) {
+        super(compilerOutputFileNamingSchemeFactory, invocationContext, argsTransformer, specTransformer, objectFileExtension, useCommandFile);
     }
 
     @Override

@@ -17,18 +17,16 @@
 package org.gradle.nativeplatform.toolchain.internal.gcc;
 
 import org.gradle.internal.Transformers;
-import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.nativeplatform.internal.CompilerOutputFileNamingSchemeFactory;
 import org.gradle.nativeplatform.toolchain.internal.CommandLineToolContext;
-import org.gradle.nativeplatform.toolchain.internal.CommandLineToolInvocationWorker;
 import org.gradle.nativeplatform.toolchain.internal.compilespec.AssembleSpec;
 
 import java.util.List;
 
 class Assembler extends GccCompatibleNativeCompiler<AssembleSpec> {
 
-    Assembler(BuildOperationExecutor buildOperationExecutor, CompilerOutputFileNamingSchemeFactory compilerOutputFileNamingSchemeFactory, CommandLineToolInvocationWorker commandLineTool, CommandLineToolContext invocationContext, String objectFileExtension, boolean useCommandFile) {
-        super(buildOperationExecutor, compilerOutputFileNamingSchemeFactory, commandLineTool, invocationContext, new AssemblerArgsTransformer(), Transformers.<AssembleSpec>noOpTransformer(), objectFileExtension, useCommandFile);
+    Assembler(CompilerOutputFileNamingSchemeFactory compilerOutputFileNamingSchemeFactory, CommandLineToolContext invocationContext, String objectFileExtension, boolean useCommandFile) {
+        super(compilerOutputFileNamingSchemeFactory, invocationContext, new AssemblerArgsTransformer(), Transformers.<AssembleSpec>noOpTransformer(), objectFileExtension, useCommandFile);
     }
 
     @Override

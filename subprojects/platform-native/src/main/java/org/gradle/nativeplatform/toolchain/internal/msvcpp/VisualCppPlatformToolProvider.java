@@ -27,7 +27,17 @@ import org.gradle.nativeplatform.internal.LinkerSpec;
 import org.gradle.nativeplatform.internal.StaticLibraryArchiverSpec;
 import org.gradle.nativeplatform.platform.internal.NativePlatformInternal;
 import org.gradle.nativeplatform.platform.internal.OperatingSystemInternal;
-import org.gradle.nativeplatform.toolchain.internal.*;
+import org.gradle.nativeplatform.toolchain.internal.AbstractPlatformToolProvider;
+import org.gradle.nativeplatform.toolchain.internal.CommandLineToolContext;
+import org.gradle.nativeplatform.toolchain.internal.CommandLineToolInvocationWorker;
+import org.gradle.nativeplatform.toolchain.internal.DefaultCommandLineToolInvocationWorker;
+import org.gradle.nativeplatform.toolchain.internal.DefaultMutableCommandLineToolContext;
+import org.gradle.nativeplatform.toolchain.internal.MutableCommandLineToolContext;
+import org.gradle.nativeplatform.toolchain.internal.NativeCompileSpec;
+import org.gradle.nativeplatform.toolchain.internal.OutputCleaningCompiler;
+import org.gradle.nativeplatform.toolchain.internal.PCHUtils;
+import org.gradle.nativeplatform.toolchain.internal.ParallelCompiler;
+import org.gradle.nativeplatform.toolchain.internal.ToolType;
 import org.gradle.nativeplatform.toolchain.internal.compilespec.AssembleSpec;
 import org.gradle.nativeplatform.toolchain.internal.compilespec.CCompileSpec;
 import org.gradle.nativeplatform.toolchain.internal.compilespec.CPCHCompileSpec;
@@ -69,35 +79,35 @@ class VisualCppPlatformToolProvider extends AbstractPlatformToolProvider {
     @Override
     protected Compiler<CppCompileSpec> createCppCompiler() {
         CommandLineToolInvocationWorker commandLineTool = tool("C++ compiler", visualCpp.getCompiler(targetPlatform));
-        CppCompiler cppCompiler = new CppCompiler(buildOperationExecutor, compilerOutputFileNamingSchemeFactory, commandLineTool, context(commandLineToolConfigurations.get(ToolType.CPP_COMPILER)), addIncludePathAndDefinitions(CppCompileSpec.class), getObjectFileExtension(), true);
+        Compiler<CppCompileSpec> cppCompiler = new ParallelCompiler<CppCompileSpec>(buildOperationExecutor, commandLineTool, new CppCompiler(compilerOutputFileNamingSchemeFactory, context(commandLineToolConfigurations.get(ToolType.CPP_COMPILER)), addIncludePathAndDefinitions(CppCompileSpec.class), getObjectFileExtension(), true));
         return new OutputCleaningCompiler<CppCompileSpec>(cppCompiler, compilerOutputFileNamingSchemeFactory, getObjectFileExtension());
     }
 
     @Override
-    protected Compiler<?> createCppPCHCompiler() {
+    protected Compiler<CppPCHCompileSpec> createCppPCHCompiler() {
         CommandLineToolInvocationWorker commandLineTool = tool("C++ PCH compiler", visualCpp.getCompiler(targetPlatform));
-        CppPCHCompiler cppPCHCompiler = new CppPCHCompiler(buildOperationExecutor, compilerOutputFileNamingSchemeFactory, commandLineTool, context(commandLineToolConfigurations.get(ToolType.CPP_COMPILER)), pchSpecTransforms(CppPCHCompileSpec.class), getPCHFileExtension(), true);
+        Compiler<CppPCHCompileSpec> cppPCHCompiler = new ParallelCompiler<CppPCHCompileSpec>(buildOperationExecutor, commandLineTool, new CppPCHCompiler(compilerOutputFileNamingSchemeFactory, context(commandLineToolConfigurations.get(ToolType.CPP_COMPILER)), pchSpecTransforms(CppPCHCompileSpec.class), getPCHFileExtension(), true));
         return new OutputCleaningCompiler<CppPCHCompileSpec>(cppPCHCompiler, compilerOutputFileNamingSchemeFactory, getPCHFileExtension());
     }
 
     @Override
     protected Compiler<CCompileSpec> createCCompiler() {
         CommandLineToolInvocationWorker commandLineTool = tool("C compiler", visualCpp.getCompiler(targetPlatform));
-        CCompiler cCompiler = new CCompiler(buildOperationExecutor, compilerOutputFileNamingSchemeFactory, commandLineTool, context(commandLineToolConfigurations.get(ToolType.C_COMPILER)), addIncludePathAndDefinitions(CCompileSpec.class), getObjectFileExtension(), true);
+        Compiler<CCompileSpec> cCompiler = new ParallelCompiler<CCompileSpec>(buildOperationExecutor, commandLineTool, new CCompiler(compilerOutputFileNamingSchemeFactory, context(commandLineToolConfigurations.get(ToolType.C_COMPILER)), addIncludePathAndDefinitions(CCompileSpec.class), getObjectFileExtension(), true));
         return new OutputCleaningCompiler<CCompileSpec>(cCompiler, compilerOutputFileNamingSchemeFactory, getObjectFileExtension());
     }
 
     @Override
-    protected Compiler<?> createCPCHCompiler() {
+    protected Compiler<CPCHCompileSpec> createCPCHCompiler() {
         CommandLineToolInvocationWorker commandLineTool = tool("C PCH compiler", visualCpp.getCompiler(targetPlatform));
-        CPCHCompiler cpchCompiler = new CPCHCompiler(buildOperationExecutor, compilerOutputFileNamingSchemeFactory, commandLineTool, context(commandLineToolConfigurations.get(ToolType.C_COMPILER)), pchSpecTransforms(CPCHCompileSpec.class), getPCHFileExtension(), true);
+        Compiler<CPCHCompileSpec> cpchCompiler = new ParallelCompiler<CPCHCompileSpec>(buildOperationExecutor, commandLineTool, new CPCHCompiler(compilerOutputFileNamingSchemeFactory, context(commandLineToolConfigurations.get(ToolType.C_COMPILER)), pchSpecTransforms(CPCHCompileSpec.class), getPCHFileExtension(), true));
         return new OutputCleaningCompiler<CPCHCompileSpec>(cpchCompiler, compilerOutputFileNamingSchemeFactory, getPCHFileExtension());
     }
 
     @Override
     protected Compiler<AssembleSpec> createAssembler() {
         CommandLineToolInvocationWorker commandLineTool = tool("Assembler", visualCpp.getAssembler(targetPlatform));
-        return new Assembler(buildOperationExecutor, compilerOutputFileNamingSchemeFactory, commandLineTool, context(commandLineToolConfigurations.get(ToolType.ASSEMBLER)), addIncludePathAndDefinitions(AssembleSpec.class), getObjectFileExtension(), false);
+        return new ParallelCompiler<AssembleSpec>(buildOperationExecutor, commandLineTool, new Assembler(compilerOutputFileNamingSchemeFactory, context(commandLineToolConfigurations.get(ToolType.ASSEMBLER)), addIncludePathAndDefinitions(AssembleSpec.class), getObjectFileExtension(), false));
     }
 
     @Override
@@ -114,20 +124,20 @@ class VisualCppPlatformToolProvider extends AbstractPlatformToolProvider {
     protected Compiler<WindowsResourceCompileSpec> createWindowsResourceCompiler() {
         CommandLineToolInvocationWorker commandLineTool = tool("Windows resource compiler", sdk.getResourceCompiler(targetPlatform));
         String objectFileExtension = ".res";
-        WindowsResourceCompiler windowsResourceCompiler = new WindowsResourceCompiler(buildOperationExecutor, compilerOutputFileNamingSchemeFactory, commandLineTool, context(commandLineToolConfigurations.get(ToolType.WINDOW_RESOURCES_COMPILER)), addIncludePathAndDefinitions(WindowsResourceCompileSpec.class), objectFileExtension, false);
+        Compiler<WindowsResourceCompileSpec> windowsResourceCompiler = new ParallelCompiler<WindowsResourceCompileSpec>(buildOperationExecutor, commandLineTool, new WindowsResourceCompiler(compilerOutputFileNamingSchemeFactory, context(commandLineToolConfigurations.get(ToolType.WINDOW_RESOURCES_COMPILER)), addIncludePathAndDefinitions(WindowsResourceCompileSpec.class), objectFileExtension, false));
         return new OutputCleaningCompiler<WindowsResourceCompileSpec>(windowsResourceCompiler, compilerOutputFileNamingSchemeFactory, objectFileExtension);
     }
 
     @Override
     protected Compiler<LinkerSpec> createLinker() {
         CommandLineToolInvocationWorker commandLineTool = tool("Linker", visualCpp.getLinker(targetPlatform));
-        return new LinkExeLinker(buildOperationExecutor, commandLineTool, context(commandLineToolConfigurations.get(ToolType.LINKER)), addLibraryPath());
+        return new ParallelCompiler<LinkerSpec>(buildOperationExecutor, commandLineTool, new LinkExeLinker(context(commandLineToolConfigurations.get(ToolType.LINKER)), addLibraryPath()));
     }
 
     @Override
     protected Compiler<StaticLibraryArchiverSpec> createStaticLibraryArchiver() {
         CommandLineToolInvocationWorker commandLineTool = tool("Static library archiver", visualCpp.getArchiver(targetPlatform));
-        return new LibExeStaticLibraryArchiver(buildOperationExecutor, commandLineTool, context(commandLineToolConfigurations.get(ToolType.STATIC_LIB_ARCHIVER)), Transformers.<StaticLibraryArchiverSpec>noOpTransformer());
+        return new ParallelCompiler<StaticLibraryArchiverSpec>(buildOperationExecutor, commandLineTool, new LibExeStaticLibraryArchiver(context(commandLineToolConfigurations.get(ToolType.STATIC_LIB_ARCHIVER)), Transformers.<StaticLibraryArchiverSpec>noOpTransformer()));
     }
 
     private CommandLineToolInvocationWorker tool(String toolName, File exe) {

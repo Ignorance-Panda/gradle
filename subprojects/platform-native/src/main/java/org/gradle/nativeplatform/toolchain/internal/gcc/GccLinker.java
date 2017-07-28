@@ -16,8 +16,6 @@
 
 package org.gradle.nativeplatform.toolchain.internal.gcc;
 
-import org.gradle.api.Action;
-import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.internal.operations.BuildOperationQueue;
 import org.gradle.nativeplatform.internal.LinkerSpec;
 import org.gradle.nativeplatform.internal.SharedLibraryLinkerSpec;
@@ -26,31 +24,23 @@ import org.gradle.nativeplatform.toolchain.internal.AbstractCompiler;
 import org.gradle.nativeplatform.toolchain.internal.ArgsTransformer;
 import org.gradle.nativeplatform.toolchain.internal.CommandLineToolContext;
 import org.gradle.nativeplatform.toolchain.internal.CommandLineToolInvocation;
-import org.gradle.nativeplatform.toolchain.internal.CommandLineToolInvocationWorker;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 class GccLinker extends AbstractCompiler<LinkerSpec> {
-    GccLinker(BuildOperationExecutor buildOperationExecutor, CommandLineToolInvocationWorker commandLineToolInvocationWorker, CommandLineToolContext invocationContext, boolean useCommandFile) {
-        super(buildOperationExecutor, commandLineToolInvocationWorker, invocationContext, new GccLinkerArgsTransformer(), useCommandFile);
+    GccLinker(CommandLineToolContext invocationContext, boolean useCommandFile) {
+        super(invocationContext, new GccLinkerArgsTransformer(), useCommandFile);
     }
 
     @Override
-    protected Action<BuildOperationQueue<CommandLineToolInvocation>> newInvocationAction(final LinkerSpec spec) {
+    public void start(LinkerSpec spec, BuildOperationQueue<CommandLineToolInvocation> queue) {
         List<String> args = getArguments(spec);
 
-        final CommandLineToolInvocation invocation = newInvocation(
+        CommandLineToolInvocation invocation = newInvocation(
             "linking " + spec.getOutputFile().getName(), spec.getOutputFile().getParentFile(), args, spec.getOperationLogger());
-
-        return new Action<BuildOperationQueue<CommandLineToolInvocation>>() {
-            @Override
-            public void execute(BuildOperationQueue<CommandLineToolInvocation> buildQueue) {
-                buildQueue.setLogLocation(spec.getOperationLogger().getLogLocation());
-                buildQueue.add(invocation);
-            }
-        };
+        queue.add(invocation);
     }
 
     @Override
@@ -81,9 +71,7 @@ class GccLinker extends AbstractCompiler<LinkerSpec> {
                 throw new UnsupportedOperationException("Library Path not yet supported on GCC");
             }
 
-            for (String userArg : spec.getArgs()) {
-                args.add(userArg);
-            }
+            args.addAll(spec.getArgs());
 
             return args;
         }

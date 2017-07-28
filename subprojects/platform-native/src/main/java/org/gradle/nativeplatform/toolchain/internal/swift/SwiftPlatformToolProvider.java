@@ -30,6 +30,7 @@ import org.gradle.nativeplatform.toolchain.internal.DefaultCommandLineToolInvoca
 import org.gradle.nativeplatform.toolchain.internal.DefaultMutableCommandLineToolContext;
 import org.gradle.nativeplatform.toolchain.internal.MutableCommandLineToolContext;
 import org.gradle.nativeplatform.toolchain.internal.OutputCleaningCompiler;
+import org.gradle.nativeplatform.toolchain.internal.ParallelCompiler;
 import org.gradle.nativeplatform.toolchain.internal.ToolType;
 import org.gradle.nativeplatform.toolchain.internal.compilespec.SwiftCompileSpec;
 import org.gradle.nativeplatform.toolchain.internal.tools.CommandLineToolConfigurationInternal;
@@ -61,12 +62,12 @@ class SwiftPlatformToolProvider extends AbstractPlatformToolProvider {
     @Override
     protected Compiler<LinkerSpec> createLinker() {
         CommandLineToolConfigurationInternal linkerTool = (CommandLineToolConfigurationInternal) toolRegistry.getLinker();
-        return new SwiftLinker(buildOperationExecutor, commandLineTool(ToolType.LINKER, "swiftc"), context(linkerTool));
+        return new ParallelCompiler<LinkerSpec>(buildOperationExecutor, commandLineTool(ToolType.LINKER, "swiftc"), new SwiftLinker(context(linkerTool)));
     }
 
-    protected Compiler<SwiftCompileSpec> createSwiftCompiler() {
+    private Compiler<SwiftCompileSpec> createSwiftCompiler() {
         CommandLineToolConfigurationInternal swiftCompilerTool = (CommandLineToolConfigurationInternal) toolRegistry.getSwiftCompiler();
-        SwiftCompiler swiftCompiler = new SwiftCompiler(buildOperationExecutor, compilerOutputFileNamingSchemeFactory, commandLineTool(ToolType.SWIFT_COMPILER, "swiftc"), context(swiftCompilerTool), getObjectFileExtension());
+        Compiler<SwiftCompileSpec> swiftCompiler = new ParallelCompiler<SwiftCompileSpec>(buildOperationExecutor, commandLineTool(ToolType.SWIFT_COMPILER, "swiftc"), new SwiftCompiler(compilerOutputFileNamingSchemeFactory, context(swiftCompilerTool), getObjectFileExtension()));
         // TODO - OutputCleaningCompiler shouldn't be required
         return new OutputCleaningCompiler<SwiftCompileSpec>(swiftCompiler, compilerOutputFileNamingSchemeFactory, getObjectFileExtension());
     }

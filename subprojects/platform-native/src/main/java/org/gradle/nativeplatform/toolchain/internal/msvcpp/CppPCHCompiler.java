@@ -17,10 +17,8 @@
 package org.gradle.nativeplatform.toolchain.internal.msvcpp;
 
 import org.gradle.api.Transformer;
-import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.nativeplatform.internal.CompilerOutputFileNamingSchemeFactory;
 import org.gradle.nativeplatform.toolchain.internal.CommandLineToolContext;
-import org.gradle.nativeplatform.toolchain.internal.CommandLineToolInvocationWorker;
 import org.gradle.nativeplatform.toolchain.internal.compilespec.CppPCHCompileSpec;
 
 import java.io.File;
@@ -28,8 +26,8 @@ import java.util.Collections;
 import java.util.List;
 
 public class CppPCHCompiler extends VisualCppNativeCompiler<CppPCHCompileSpec> {
-    CppPCHCompiler(BuildOperationExecutor buildOperationExecutor, CompilerOutputFileNamingSchemeFactory compilerOutputFileNamingSchemeFactory, CommandLineToolInvocationWorker commandLineToolInvocationWorker, CommandLineToolContext invocationContext, Transformer<CppPCHCompileSpec, CppPCHCompileSpec> specTransformer, String objectFileExtension, boolean useCommandFile) {
-        super(buildOperationExecutor, compilerOutputFileNamingSchemeFactory, commandLineToolInvocationWorker, invocationContext, new VisualCppPCHCompilerArgsTransformer<CppPCHCompileSpec>(), specTransformer, objectFileExtension, useCommandFile);
+    CppPCHCompiler(CompilerOutputFileNamingSchemeFactory compilerOutputFileNamingSchemeFactory, CommandLineToolContext invocationContext, Transformer<CppPCHCompileSpec, CppPCHCompileSpec> specTransformer, String objectFileExtension, boolean useCommandFile) {
+        super(compilerOutputFileNamingSchemeFactory, invocationContext, new VisualCppPCHCompilerArgsTransformer<CppPCHCompileSpec>(), specTransformer, objectFileExtension, useCommandFile);
     }
 
     @Override

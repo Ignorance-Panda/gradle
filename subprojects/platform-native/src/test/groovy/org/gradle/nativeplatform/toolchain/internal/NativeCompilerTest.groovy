@@ -19,28 +19,13 @@ package org.gradle.nativeplatform.toolchain.internal
 import org.gradle.api.Action
 import org.gradle.api.internal.file.BaseDirFileResolver
 import org.gradle.api.internal.file.TestFiles
-import org.gradle.internal.concurrent.ParallelismConfigurationManagerFixture
-import org.gradle.test.fixtures.work.TestWorkerLeaseService
-import org.gradle.internal.concurrent.DefaultParallelismConfiguration
-import org.gradle.internal.concurrent.DefaultExecutorFactory
-import org.gradle.internal.concurrent.GradleThread
-import org.gradle.internal.concurrent.ParallelismConfigurationManager
-import org.gradle.internal.operations.BuildOperationExecutor
-import org.gradle.internal.operations.DefaultBuildOperationQueueFactory
+import org.gradle.internal.operations.BuildOperationQueue
 import org.gradle.internal.operations.logging.BuildOperationLogger
-import org.gradle.internal.progress.BuildOperationListener
-import org.gradle.internal.progress.DefaultBuildOperationExecutor
-import org.gradle.internal.progress.NoOpProgressLoggerFactory
-import org.gradle.internal.resources.ResourceLockCoordinationService
-import org.gradle.internal.time.TimeProvider
-import org.gradle.internal.work.WorkerLeaseService
 import org.gradle.nativeplatform.internal.CompilerOutputFileNamingSchemeFactory
 import org.gradle.test.fixtures.file.TestNameTestDirectoryProvider
 import org.junit.Rule
 import spock.lang.Specification
 import spock.lang.Unroll
-
-import java.util.concurrent.Executor
 
 abstract class NativeCompilerTest extends Specification {
     @Rule final TestNameTestDirectoryProvider tmpDirProvider = new TestNameTestDirectoryProvider()
@@ -56,28 +41,7 @@ abstract class NativeCompilerTest extends Specification {
     protected abstract Class<? extends NativeCompileSpec> getCompileSpecType()
     protected abstract List<String> getCompilerSpecificArguments(File includeDir)
 
-    protected CommandLineToolInvocationWorker commandLineTool = Mock(CommandLineToolInvocationWorker)
-
-    WorkerLeaseService workerLeaseService = new TestWorkerLeaseService()
-    ResourceLockCoordinationService resourceLockCoordinationService = Stub(ResourceLockCoordinationService)
-
-    private BuildOperationListener buildOperationListener = Mock(BuildOperationListener)
-    private TimeProvider timeProvider = Mock(TimeProvider)
-    ParallelismConfigurationManager parallelExecutionManager = new ParallelismConfigurationManagerFixture(DefaultParallelismConfiguration.DEFAULT)
-    protected BuildOperationExecutor buildOperationExecutor = new DefaultBuildOperationExecutor(buildOperationListener, timeProvider, new NoOpProgressLoggerFactory(),
-        new DefaultBuildOperationQueueFactory(workerLeaseService), new DefaultExecutorFactory(), resourceLockCoordinationService, parallelExecutionManager)
-
-    def setup() {
-        _ * workerLeaseService.withLocks(_) >> { args ->
-            new Executor() {
-                @Override
-                void execute(Runnable runnable) {
-                    runnable.run()
-                }
-            }
-        }
-        _ * resourceLockCoordinationService.current >> null
-    }
+    BuildOperationQueue queue = Mock(BuildOperationQueue)
 
     def "arguments include source file"() {
         given:
@@ -143,8 +107,6 @@ abstract class NativeCompilerTest extends Specification {
     @Unroll("Compiles source files (options.txt=#withOptionsFile) with #description")
     def "compiles all source files in separate executions"() {
         given:
-        GradleThread.setManaged()
-
         def invocationContext = new DefaultMutableCommandLineToolContext()
         def compiler = getCompiler(invocationContext, O_EXT, withOptionsFile)
         def testDir = tmpDirProvider.testDirectory
@@ -165,20 +127,14 @@ abstract class NativeCompilerTest extends Specification {
         }
 
         and:
-        compiler.execute(compileSpec)
+        compiler.start(compileSpec, queue)
 
         then:
 
         sourceFiles.each{ sourceFile ->
-            1 * commandLineTool.execute(_, _)
+            1 * queue.add(_)
         }
-        4 * timeProvider.getCurrentTime()
-        2 * buildOperationListener.started(_, _)
-        2 * buildOperationListener.finished(_, _)
         0 * _
-
-        cleanup:
-        GradleThread.setUnmanaged()
 
         where:
         withOptionsFile | description
@@ -195,6 +151,7 @@ abstract class NativeCompilerTest extends Specification {
         def testDir = tmpDirProvider.testDirectory
         def objectFileDir = testDir.file("output/objects")
         def sourceFiles = [ testDir.file("source1.ext"), testDir.file("source2.ext") ]
+
         when:
         NativeCompileSpec compileSpec = Stub(getCompileSpecType()) {
             getObjectFileDir() >> objectFileDir
@@ -208,11 +165,11 @@ abstract class NativeCompilerTest extends Specification {
         invocationContext.getArgAction() >> action
 
         and:
-        compiler.execute(compileSpec)
+        compiler.start(compileSpec, queue)
 
         then:
         1 * action.execute(_)
-        2 * commandLineTool.execute(_, _)
+        2 * queue.add(_)
     }
 
     def "options file is written"() {

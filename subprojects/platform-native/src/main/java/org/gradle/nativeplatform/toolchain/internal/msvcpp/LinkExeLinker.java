@@ -16,10 +16,7 @@
 
 package org.gradle.nativeplatform.toolchain.internal.msvcpp;
 
-import org.gradle.api.Action;
 import org.gradle.api.Transformer;
-import org.gradle.api.tasks.WorkResult;
-import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.internal.operations.BuildOperationQueue;
 import org.gradle.nativeplatform.internal.LinkerSpec;
 import org.gradle.nativeplatform.internal.SharedLibraryLinkerSpec;
@@ -27,7 +24,6 @@ import org.gradle.nativeplatform.toolchain.internal.AbstractCompiler;
 import org.gradle.nativeplatform.toolchain.internal.ArgsTransformer;
 import org.gradle.nativeplatform.toolchain.internal.CommandLineToolContext;
 import org.gradle.nativeplatform.toolchain.internal.CommandLineToolInvocation;
-import org.gradle.nativeplatform.toolchain.internal.CommandLineToolInvocationWorker;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -40,32 +36,19 @@ class LinkExeLinker extends AbstractCompiler<LinkerSpec> {
     private final Transformer<LinkerSpec, LinkerSpec> specTransformer;
     private final CommandLineToolContext invocationContext;
 
-    LinkExeLinker(BuildOperationExecutor buildOperationExecutor, CommandLineToolInvocationWorker commandLineToolInvocationWorker, CommandLineToolContext invocationContext, Transformer<LinkerSpec, LinkerSpec> specTransformer) {
-        super(buildOperationExecutor, commandLineToolInvocationWorker, invocationContext, new LinkerArgsTransformer(), true);
+    LinkExeLinker(CommandLineToolContext invocationContext, Transformer<LinkerSpec, LinkerSpec> specTransformer) {
+        super(invocationContext, new LinkerArgsTransformer(), true);
         this.invocationContext = invocationContext;
         this.specTransformer = specTransformer;
     }
 
     @Override
-    public WorkResult execute(final LinkerSpec spec) {
-        LinkerSpec transformedSpec = specTransformer.transform(spec);
-
-        return super.execute(transformedSpec);
-    }
-
-    @Override
-    protected Action<BuildOperationQueue<CommandLineToolInvocation>> newInvocationAction(final LinkerSpec spec) {
+    public void start(LinkerSpec spec, BuildOperationQueue<CommandLineToolInvocation> queue) {
+        spec = specTransformer.transform(spec);
         List<String> args = getArguments(spec);
-        final CommandLineToolInvocation invocation = invocationContext.createInvocation(
+        CommandLineToolInvocation invocation = invocationContext.createInvocation(
             "linking " + spec.getOutputFile().getName(), spec.getOutputFile().getParentFile(), args, spec.getOperationLogger());
-
-        return new Action<BuildOperationQueue<CommandLineToolInvocation>>() {
-            @Override
-            public void execute(BuildOperationQueue<CommandLineToolInvocation> buildQueue) {
-                buildQueue.setLogLocation(spec.getOperationLogger().getLogLocation());
-                buildQueue.add(invocation);
-            }
-        };
+        queue.add(invocation);
     }
 
     protected void addOptionsFileArgs(List<String> args, File tempDir) {

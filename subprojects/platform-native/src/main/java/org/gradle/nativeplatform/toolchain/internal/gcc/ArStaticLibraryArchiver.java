@@ -16,17 +16,13 @@
 
 package org.gradle.nativeplatform.toolchain.internal.gcc;
 
-import org.gradle.api.Action;
 import org.gradle.api.GradleException;
-import org.gradle.api.tasks.WorkResult;
-import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.internal.operations.BuildOperationQueue;
 import org.gradle.nativeplatform.internal.StaticLibraryArchiverSpec;
 import org.gradle.nativeplatform.toolchain.internal.AbstractCompiler;
 import org.gradle.nativeplatform.toolchain.internal.ArgsTransformer;
 import org.gradle.nativeplatform.toolchain.internal.CommandLineToolContext;
 import org.gradle.nativeplatform.toolchain.internal.CommandLineToolInvocation;
-import org.gradle.nativeplatform.toolchain.internal.CommandLineToolInvocationWorker;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -36,15 +32,17 @@ import java.util.List;
  * A static library archiver based on the GNU 'ar' utility
  */
 class ArStaticLibraryArchiver extends AbstractCompiler<StaticLibraryArchiverSpec> {
-    ArStaticLibraryArchiver(BuildOperationExecutor buildOperationExecutor, CommandLineToolInvocationWorker commandLineToolInvocationWorker, CommandLineToolContext invocationContext) {
-        super(buildOperationExecutor, commandLineToolInvocationWorker, invocationContext, new ArchiverSpecToArguments(), false);
+    ArStaticLibraryArchiver(CommandLineToolContext invocationContext) {
+        super(invocationContext, new ArchiverSpecToArguments(), false);
     }
 
     @Override
-    public WorkResult execute(final StaticLibraryArchiverSpec spec) {
+    public void start(StaticLibraryArchiverSpec spec, BuildOperationQueue<CommandLineToolInvocation> queue) {
         deletePreviousOutput(spec);
-
-        return super.execute(spec);
+        List<String> args = getArguments(spec);
+        CommandLineToolInvocation invocation = newInvocation(
+            "archiving " + spec.getOutputFile().getName(), spec.getOutputFile().getParentFile(), args, spec.getOperationLogger());
+        queue.add(invocation);
     }
 
     private void deletePreviousOutput(StaticLibraryArchiverSpec spec) {
@@ -55,21 +53,6 @@ class ArStaticLibraryArchiver extends AbstractCompiler<StaticLibraryArchiverSpec
         if (!(spec.getOutputFile().delete())) {
             throw new GradleException("Create static archive failed: could not delete previous archive");
         }
-    }
-
-    @Override
-    protected Action<BuildOperationQueue<CommandLineToolInvocation>> newInvocationAction(final StaticLibraryArchiverSpec spec) {
-        List<String> args = getArguments(spec);
-        final CommandLineToolInvocation invocation = newInvocation(
-            "archiving " + spec.getOutputFile().getName(), spec.getOutputFile().getParentFile(), args, spec.getOperationLogger());
-
-        return new Action<BuildOperationQueue<CommandLineToolInvocation>>() {
-            @Override
-            public void execute(BuildOperationQueue<CommandLineToolInvocation> buildQueue) {
-                buildQueue.setLogLocation(spec.getOperationLogger().getLogLocation());
-                buildQueue.add(invocation);
-            }
-        };
     }
 
     @Override
