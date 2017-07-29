@@ -27,6 +27,7 @@ import org.gradle.nativeplatform.internal.SharedLibraryBinaryRenderer;
 import org.gradle.nativeplatform.internal.StaticLibraryBinaryRenderer;
 import org.gradle.nativeplatform.internal.resolve.NativeDependencyResolverServices;
 import org.gradle.nativeplatform.platform.internal.NativePlatforms;
+import org.gradle.nativeplatform.toolchain.internal.DefaultNativeCompilerFactory;
 import org.gradle.nativeplatform.toolchain.internal.gcc.version.CompilerMetaDataProviderFactory;
 import org.gradle.nativeplatform.toolchain.internal.msvcpp.DefaultUcrtLocator;
 import org.gradle.nativeplatform.toolchain.internal.msvcpp.DefaultVisualStudioLocator;
@@ -50,6 +51,7 @@ public class NativeBinaryServices extends AbstractPluginServiceRegistry {
         registration.add(DefaultWindowsSdkLocator.class);
         registration.add(DefaultUcrtLocator.class);
         registration.add(CompilerMetaDataProviderFactory.class);
+        registration.add(DefaultNativeCompilerFactory.class);
     }
 
     @Override

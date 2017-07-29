@@ -17,7 +17,6 @@
 package org.gradle.nativeplatform.toolchain.internal.msvcpp;
 
 import org.gradle.api.internal.file.FileResolver;
-import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.internal.os.OperatingSystem;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.nativeplatform.internal.CompilerOutputFileNamingSchemeFactory;
@@ -25,6 +24,7 @@ import org.gradle.nativeplatform.platform.internal.NativePlatformInternal;
 import org.gradle.nativeplatform.toolchain.VisualCpp;
 import org.gradle.nativeplatform.toolchain.VisualCppPlatformToolChain;
 import org.gradle.nativeplatform.toolchain.internal.ExtendableToolChain;
+import org.gradle.nativeplatform.toolchain.internal.NativeCompilerFactory;
 import org.gradle.nativeplatform.toolchain.internal.NativeToolChainInternal;
 import org.gradle.nativeplatform.toolchain.internal.PlatformToolProvider;
 import org.gradle.nativeplatform.toolchain.internal.UnavailablePlatformToolProvider;
@@ -50,6 +50,7 @@ public class VisualCppToolChain extends ExtendableToolChain<VisualCppPlatformToo
     private final UcrtLocator ucrtLocator;
     private final Instantiator instantiator;
     private final CompilerOutputFileNamingSchemeFactory compilerOutputFileNamingSchemeFactory;
+    private final NativeCompilerFactory compilerFactory;
 
     private File installDir;
     private File ucrtDir;
@@ -59,10 +60,10 @@ public class VisualCppToolChain extends ExtendableToolChain<VisualCppPlatformToo
     private WindowsSdk windowsSdk;
     private ToolChainAvailability availability;
 
-    public VisualCppToolChain(String name, BuildOperationExecutor buildOperationExecutor, OperatingSystem operatingSystem, FileResolver fileResolver, ExecActionFactory execActionFactory,
-                              CompilerOutputFileNamingSchemeFactory compilerOutputFileNamingSchemeFactory, VisualStudioLocator visualStudioLocator, WindowsSdkLocator windowsSdkLocator, UcrtLocator ucrtLocator, Instantiator instantiator) {
-        super(name, buildOperationExecutor, operatingSystem, fileResolver);
+    public VisualCppToolChain(String name, NativeCompilerFactory compilerFactory, OperatingSystem operatingSystem, FileResolver fileResolver, ExecActionFactory execActionFactory, CompilerOutputFileNamingSchemeFactory compilerOutputFileNamingSchemeFactory, VisualStudioLocator visualStudioLocator, WindowsSdkLocator windowsSdkLocator, UcrtLocator ucrtLocator, Instantiator instantiator) {
+        super(name, operatingSystem, fileResolver);
         this.name = name;
+        this.compilerFactory = compilerFactory;
         this.operatingSystem = operatingSystem;
         this.execActionFactory = execActionFactory;
         this.compilerOutputFileNamingSchemeFactory = compilerOutputFileNamingSchemeFactory;
@@ -119,7 +120,7 @@ public class VisualCppToolChain extends ExtendableToolChain<VisualCppPlatformToo
         DefaultVisualCppPlatformToolChain configurableToolChain = instantiator.newInstance(DefaultVisualCppPlatformToolChain.class, targetPlatform, instantiator);
         configureActions.execute(configurableToolChain);
 
-        return new VisualCppPlatformToolProvider(buildOperationExecutor, targetPlatform.getOperatingSystem(), configurableToolChain.tools, visualCpp, windowsSdk, ucrt, targetPlatform, execActionFactory, compilerOutputFileNamingSchemeFactory);
+        return new VisualCppPlatformToolProvider(compilerFactory, targetPlatform.getOperatingSystem(), configurableToolChain.tools, visualCpp, windowsSdk, ucrt, targetPlatform, execActionFactory, compilerOutputFileNamingSchemeFactory);
     }
 
     private ToolChainAvailability getAvailability() {

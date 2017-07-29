@@ -21,7 +21,6 @@ import org.gradle.api.NamedDomainObjectFactory;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.internal.file.FileResolver;
-import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.internal.os.OperatingSystem;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.ServiceRegistry;
@@ -30,8 +29,8 @@ import org.gradle.model.RuleSource;
 import org.gradle.nativeplatform.internal.CompilerOutputFileNamingSchemeFactory;
 import org.gradle.nativeplatform.plugins.NativeComponentModelPlugin;
 import org.gradle.nativeplatform.toolchain.Swiftc;
+import org.gradle.nativeplatform.toolchain.internal.NativeCompilerFactory;
 import org.gradle.nativeplatform.toolchain.internal.NativeToolChainRegistryInternal;
-import org.gradle.nativeplatform.toolchain.internal.gcc.version.CompilerMetaDataProviderFactory;
 import org.gradle.nativeplatform.toolchain.internal.swift.SwiftcToolChain;
 import org.gradle.process.internal.ExecActionFactory;
 
@@ -55,12 +54,11 @@ public class SwiftCompilerPlugin implements Plugin<Project> {
             final ExecActionFactory execActionFactory = serviceRegistry.get(ExecActionFactory.class);
             final CompilerOutputFileNamingSchemeFactory compilerOutputFileNamingSchemeFactory = serviceRegistry.get(CompilerOutputFileNamingSchemeFactory.class);
             final Instantiator instantiator = serviceRegistry.get(Instantiator.class);
-            final BuildOperationExecutor buildOperationExecutor = serviceRegistry.get(BuildOperationExecutor.class);
-            final CompilerMetaDataProviderFactory metaDataProviderFactory = serviceRegistry.get(CompilerMetaDataProviderFactory.class);
+            final NativeCompilerFactory compilerFactory = serviceRegistry.get(NativeCompilerFactory.class);
 
             toolChainRegistry.registerFactory(Swiftc.class, new NamedDomainObjectFactory<Swiftc>() {
                 public Swiftc create(String name) {
-                    return instantiator.newInstance(SwiftcToolChain.class, name, buildOperationExecutor, OperatingSystem.current(), fileResolver, execActionFactory, compilerOutputFileNamingSchemeFactory, metaDataProviderFactory, instantiator);
+                    return instantiator.newInstance(SwiftcToolChain.class, name, compilerFactory, OperatingSystem.current(), fileResolver, execActionFactory, compilerOutputFileNamingSchemeFactory, instantiator);
                 }
             });
             toolChainRegistry.registerDefaultToolChain(SwiftcToolChain.DEFAULT_NAME, Swiftc.class);

@@ -17,15 +17,18 @@ package org.gradle.nativeplatform.toolchain.internal.gcc
 
 import org.gradle.api.Action
 import org.gradle.api.internal.file.FileResolver
-import org.gradle.internal.operations.BuildOperationExecutor
 import org.gradle.internal.os.OperatingSystem
 import org.gradle.internal.reflect.DirectInstantiator
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.internal.text.TreeFormatter
 import org.gradle.nativeplatform.internal.CompilerOutputFileNamingSchemeFactory
-import org.gradle.nativeplatform.platform.internal.*
+import org.gradle.nativeplatform.platform.internal.Architectures
+import org.gradle.nativeplatform.platform.internal.DefaultArchitecture
+import org.gradle.nativeplatform.platform.internal.DefaultOperatingSystem
+import org.gradle.nativeplatform.platform.internal.NativePlatformInternal
 import org.gradle.nativeplatform.toolchain.GccPlatformToolChain
 import org.gradle.nativeplatform.toolchain.NativePlatformToolChain
+import org.gradle.nativeplatform.toolchain.internal.NativeCompilerFactory
 import org.gradle.nativeplatform.toolchain.internal.PlatformToolProvider
 import org.gradle.nativeplatform.toolchain.internal.ToolType
 import org.gradle.nativeplatform.toolchain.internal.gcc.version.CompilerMetaDataProvider
@@ -57,11 +60,11 @@ class AbstractGccCompatibleToolChainTest extends Specification {
     }
     def metaDataProvider = Stub(CompilerMetaDataProvider)
     def operatingSystem = Stub(OperatingSystem)
-    def buildOperationExecutor = Stub(BuildOperationExecutor)
+    def compilerFactory = Stub(NativeCompilerFactory)
     def compilerOutputFileNamingSchemeFactory = Stub(CompilerOutputFileNamingSchemeFactory)
 
     def instantiator = DirectInstantiator.INSTANCE
-    def toolChain = new TestNativeToolChain("test", buildOperationExecutor, operatingSystem, fileResolver, execActionFactory, compilerOutputFileNamingSchemeFactory, toolSearchPath, metaDataProvider, instantiator)
+    def toolChain = new TestNativeToolChain("test", compilerFactory, operatingSystem, fileResolver, execActionFactory, compilerOutputFileNamingSchemeFactory, toolSearchPath, metaDataProvider, instantiator)
     def platform = Stub(NativePlatformInternal)
 
     def dummyOs = new DefaultOperatingSystem("currentOS", OperatingSystem.current())
@@ -340,8 +343,8 @@ class AbstractGccCompatibleToolChainTest extends Specification {
     }
 
     static class TestNativeToolChain extends AbstractGccCompatibleToolChain {
-        TestNativeToolChain(String name, BuildOperationExecutor buildOperationExecutor, OperatingSystem operatingSystem, FileResolver fileResolver, ExecActionFactory execActionFactory, CompilerOutputFileNamingSchemeFactory compilerOutputFileNamingSchemeFactory, ToolSearchPath tools, CompilerMetaDataProvider metaDataProvider, Instantiator instantiator) {
-            super(name, buildOperationExecutor, operatingSystem, fileResolver, execActionFactory, compilerOutputFileNamingSchemeFactory, tools, metaDataProvider, instantiator)
+        TestNativeToolChain(String name, NativeCompilerFactory compilerFactory, OperatingSystem operatingSystem, FileResolver fileResolver, ExecActionFactory execActionFactory, CompilerOutputFileNamingSchemeFactory compilerOutputFileNamingSchemeFactory, ToolSearchPath tools, CompilerMetaDataProvider metaDataProvider, Instantiator instantiator) {
+            super(name, compilerFactory, operatingSystem, fileResolver, execActionFactory, compilerOutputFileNamingSchemeFactory, tools, metaDataProvider, instantiator)
         }
 
         @Override

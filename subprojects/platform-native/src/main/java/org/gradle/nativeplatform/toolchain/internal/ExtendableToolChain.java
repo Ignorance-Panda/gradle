@@ -19,7 +19,6 @@ package org.gradle.nativeplatform.toolchain.internal;
 import org.gradle.api.Action;
 import org.gradle.internal.MutableActionSet;
 import org.gradle.internal.file.PathToFileResolver;
-import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.internal.os.OperatingSystem;
 import org.gradle.nativeplatform.toolchain.NativePlatformToolChain;
 
@@ -30,13 +29,11 @@ public abstract class ExtendableToolChain<T extends NativePlatformToolChain> imp
     protected final OperatingSystem operatingSystem;
     private final PathToFileResolver fileResolver;
     protected final MutableActionSet<T> configureActions = new MutableActionSet<T>();
-    protected final BuildOperationExecutor buildOperationExecutor;
 
-    protected ExtendableToolChain(String name, BuildOperationExecutor buildOperationExecutor, OperatingSystem operatingSystem, PathToFileResolver fileResolver) {
+    protected ExtendableToolChain(String name, OperatingSystem operatingSystem, PathToFileResolver fileResolver) {
         this.name = name;
         this.operatingSystem = operatingSystem;
         this.fileResolver = fileResolver;
-        this.buildOperationExecutor = buildOperationExecutor;
     }
 
     @Override

@@ -21,7 +21,6 @@ import org.gradle.api.NamedDomainObjectFactory;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.internal.file.FileResolver;
-import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.internal.os.OperatingSystem;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.ServiceRegistry;
@@ -30,6 +29,7 @@ import org.gradle.model.RuleSource;
 import org.gradle.nativeplatform.internal.CompilerOutputFileNamingSchemeFactory;
 import org.gradle.nativeplatform.plugins.NativeComponentPlugin;
 import org.gradle.nativeplatform.toolchain.Gcc;
+import org.gradle.nativeplatform.toolchain.internal.NativeCompilerFactory;
 import org.gradle.nativeplatform.toolchain.internal.NativeToolChainRegistryInternal;
 import org.gradle.nativeplatform.toolchain.internal.gcc.GccToolChain;
 import org.gradle.nativeplatform.toolchain.internal.gcc.version.CompilerMetaDataProviderFactory;
@@ -52,16 +52,13 @@ public class GccCompilerPlugin implements Plugin<Project> {
             final FileResolver fileResolver = serviceRegistry.get(FileResolver.class);
             final ExecActionFactory execActionFactory = serviceRegistry.get(ExecActionFactory.class);
             final CompilerOutputFileNamingSchemeFactory compilerOutputFileNamingSchemeFactory = serviceRegistry.get(CompilerOutputFileNamingSchemeFactory.class);
-
             final Instantiator instantiator = serviceRegistry.get(Instantiator.class);
-
-            final BuildOperationExecutor buildOperationExecutor = serviceRegistry.get(BuildOperationExecutor.class);
-
+            final NativeCompilerFactory compilerFactory = serviceRegistry.get(NativeCompilerFactory.class);
             final CompilerMetaDataProviderFactory metaDataProviderFactory = serviceRegistry.get(CompilerMetaDataProviderFactory.class);
 
             toolChainRegistry.registerFactory(Gcc.class, new NamedDomainObjectFactory<Gcc>() {
                 public Gcc create(String name) {
-                    return instantiator.newInstance(GccToolChain.class, instantiator, name, buildOperationExecutor, OperatingSystem.current(), fileResolver, execActionFactory, compilerOutputFileNamingSchemeFactory, metaDataProviderFactory);
+                    return instantiator.newInstance(GccToolChain.class, instantiator, name, compilerFactory, OperatingSystem.current(), fileResolver, execActionFactory, compilerOutputFileNamingSchemeFactory, metaDataProviderFactory);
                 }
             });
             toolChainRegistry.registerDefaultToolChain(GccToolChain.DEFAULT_NAME, Gcc.class);

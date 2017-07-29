@@ -15,7 +15,6 @@
  */
 package org.gradle.nativeplatform.toolchain.internal.swift;
 
-import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.language.base.internal.compile.CompileSpec;
 import org.gradle.language.base.internal.compile.Compiler;
 import org.gradle.language.base.internal.compile.CompilerUtil;
@@ -29,8 +28,7 @@ import org.gradle.nativeplatform.toolchain.internal.CommandLineToolInvocationWor
 import org.gradle.nativeplatform.toolchain.internal.DefaultCommandLineToolInvocationWorker;
 import org.gradle.nativeplatform.toolchain.internal.DefaultMutableCommandLineToolContext;
 import org.gradle.nativeplatform.toolchain.internal.MutableCommandLineToolContext;
-import org.gradle.nativeplatform.toolchain.internal.OutputCleaningCompiler;
-import org.gradle.nativeplatform.toolchain.internal.ParallelCompiler;
+import org.gradle.nativeplatform.toolchain.internal.NativeCompilerFactory;
 import org.gradle.nativeplatform.toolchain.internal.ToolType;
 import org.gradle.nativeplatform.toolchain.internal.compilespec.SwiftCompileSpec;
 import org.gradle.nativeplatform.toolchain.internal.tools.CommandLineToolConfigurationInternal;
@@ -39,12 +37,14 @@ import org.gradle.process.internal.ExecActionFactory;
 
 class SwiftPlatformToolProvider extends AbstractPlatformToolProvider {
     private final ToolSearchPath toolSearchPath;
+    private final NativeCompilerFactory compilerFactory;
     private final SwiftcPlatformToolChain toolRegistry;
     private final ExecActionFactory execActionFactory;
     private final CompilerOutputFileNamingSchemeFactory compilerOutputFileNamingSchemeFactory;
 
-    SwiftPlatformToolProvider(BuildOperationExecutor buildOperationExecutor, OperatingSystemInternal targetOperatingSystem, ToolSearchPath toolSearchPath, SwiftcPlatformToolChain toolRegistry, ExecActionFactory execActionFactory, CompilerOutputFileNamingSchemeFactory compilerOutputFileNamingSchemeFactory) {
-        super(buildOperationExecutor, targetOperatingSystem);
+    SwiftPlatformToolProvider(NativeCompilerFactory compilerFactory, OperatingSystemInternal targetOperatingSystem, ToolSearchPath toolSearchPath, SwiftcPlatformToolChain toolRegistry, ExecActionFactory execActionFactory, CompilerOutputFileNamingSchemeFactory compilerOutputFileNamingSchemeFactory) {
+        super(targetOperatingSystem);
+        this.compilerFactory = compilerFactory;
         this.toolRegistry = toolRegistry;
         this.toolSearchPath = toolSearchPath;
         this.compilerOutputFileNamingSchemeFactory = compilerOutputFileNamingSchemeFactory;
@@ -62,14 +62,14 @@ class SwiftPlatformToolProvider extends AbstractPlatformToolProvider {
     @Override
     protected Compiler<LinkerSpec> createLinker() {
         CommandLineToolConfigurationInternal linkerTool = (CommandLineToolConfigurationInternal) toolRegistry.getLinker();
-        return new ParallelCompiler<LinkerSpec>(buildOperationExecutor, commandLineTool(ToolType.LINKER, "swiftc"), new SwiftLinker(context(linkerTool)));
+        SwiftLinker linker = new SwiftLinker(context(linkerTool));
+        return compilerFactory.compiler(linker, commandLineTool(ToolType.LINKER, "swiftc"));
     }
 
     private Compiler<SwiftCompileSpec> createSwiftCompiler() {
         CommandLineToolConfigurationInternal swiftCompilerTool = (CommandLineToolConfigurationInternal) toolRegistry.getSwiftCompiler();
-        Compiler<SwiftCompileSpec> swiftCompiler = new ParallelCompiler<SwiftCompileSpec>(buildOperationExecutor, commandLineTool(ToolType.SWIFT_COMPILER, "swiftc"), new SwiftCompiler(compilerOutputFileNamingSchemeFactory, context(swiftCompilerTool), getObjectFileExtension()));
-        // TODO - OutputCleaningCompiler shouldn't be required
-        return new OutputCleaningCompiler<SwiftCompileSpec>(swiftCompiler, compilerOutputFileNamingSchemeFactory, getObjectFileExtension());
+        SwiftCompiler compiler = new SwiftCompiler(compilerOutputFileNamingSchemeFactory, context(swiftCompilerTool), getObjectFileExtension());
+        return compilerFactory.compiler(compiler, commandLineTool(ToolType.SWIFT_COMPILER, "swiftc"));
     }
 
     private CommandLineToolInvocationWorker commandLineTool(ToolType key, String exeName) {

@@ -18,13 +18,13 @@ package org.gradle.nativeplatform.toolchain.internal.gcc
 
 import org.gradle.api.Action
 import org.gradle.api.internal.file.FileResolver
-import org.gradle.internal.operations.BuildOperationExecutor
 import org.gradle.internal.os.OperatingSystem
 import org.gradle.internal.reflect.DirectInstantiator
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.nativeplatform.internal.CompilerOutputFileNamingSchemeFactory
 import org.gradle.nativeplatform.platform.internal.NativePlatformInternal
 import org.gradle.nativeplatform.toolchain.GccPlatformToolChain
+import org.gradle.nativeplatform.toolchain.internal.NativeCompilerFactory
 import org.gradle.nativeplatform.toolchain.internal.gcc.version.CompilerMetaDataProviderFactory
 import org.gradle.process.internal.ExecActionFactory
 import org.gradle.test.fixtures.file.TestNameTestDirectoryProvider
@@ -36,7 +36,7 @@ class GccToolChainTest extends Specification {
     final FileResolver fileResolver = Mock(FileResolver)
     Instantiator instantiator = DirectInstantiator.INSTANCE
 
-    final toolChain = new GccToolChain(instantiator , "gcc", Stub(BuildOperationExecutor), OperatingSystem.current(), fileResolver, Stub(ExecActionFactory), Stub(CompilerOutputFileNamingSchemeFactory), Stub(CompilerMetaDataProviderFactory))
+    final toolChain = new GccToolChain(instantiator , "gcc", Stub(NativeCompilerFactory), OperatingSystem.current(), fileResolver, Stub(ExecActionFactory), Stub(CompilerOutputFileNamingSchemeFactory), Stub(CompilerMetaDataProviderFactory))
 
     def "provides default tools"() {
         def action = Mock(Action)

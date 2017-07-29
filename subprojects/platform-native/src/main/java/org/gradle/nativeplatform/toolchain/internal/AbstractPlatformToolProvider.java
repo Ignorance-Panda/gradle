@@ -16,7 +16,6 @@
 
 package org.gradle.nativeplatform.toolchain.internal;
 
-import org.gradle.internal.operations.BuildOperationExecutor;
 import org.gradle.language.base.internal.compile.CompileSpec;
 import org.gradle.language.base.internal.compile.Compiler;
 import org.gradle.language.base.internal.compile.CompilerUtil;
@@ -36,12 +35,10 @@ import org.gradle.nativeplatform.toolchain.internal.compilespec.WindowsResourceC
 import org.gradle.util.TreeVisitor;
 
 public abstract class AbstractPlatformToolProvider implements PlatformToolProvider {
-    protected final OperatingSystemInternal targetOperatingSystem;
-    protected final BuildOperationExecutor buildOperationExecutor;
+    private final OperatingSystemInternal targetOperatingSystem;
 
-    public AbstractPlatformToolProvider(BuildOperationExecutor buildOperationExecutor, OperatingSystemInternal targetOperatingSystem) {
+    public AbstractPlatformToolProvider(OperatingSystemInternal targetOperatingSystem) {
         this.targetOperatingSystem = targetOperatingSystem;
-        this.buildOperationExecutor = buildOperationExecutor;
     }
 
     @Override
